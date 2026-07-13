@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">Logo MEDISTUDY</title>
+  <desc id="desc">Monograma M con línea de pulso médico</desc>
+  <defs>
+    <linearGradient id="g" x1="12" y1="10" x2="84" y2="86" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#35b1ad"/>
+      <stop offset="1" stop-color="#039e99"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="88" height="88" rx="24" fill="url(#g)"/>
+  <path d="M22 65V31l13 19 13-19 13 19 13-19v34" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
+  <path d="M18 62h14l6-10 7 19 8-15h25" fill="none" stroke="#e3dbe1" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+</svg>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medistudy | Diagnóstico</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          void:   { 50:'#f2f6fc', 100:'#e5edf9', 200:'#c7d7ef', 300:'#9db6dc', 400:'#6f8fc0', 500:'#3b6fc4', 600:'#2c5aa0', 700:'#1b3f7a', 800:'#123163', 900:'#0a1e42' },
+          violet: { 100:'#e6f0ff', 200:'#c3ddff', 300:'#93c5fd', 400:'#5b9df9', 500:'#2f6fed', 600:'#1f56c9', 700:'#173f96' },
+          coral:  { 300:'#fecaca', 400:'#f87171', 500:'#ef4444' },
+          teal:   { 50:'#eafbf9', 100:'#d3f4ef', 300:'#7fe0d6', 400:'#22c3b5', 500:'#0ea89b', 600:'#0b8377' },
+          mist:   '#eef3fb'
+        },
+        fontFamily: {
+          display: ['"Sora"','sans-serif'],
+          body: ['"Inter"','sans-serif'],
+          data: ['"JetBrains Mono"','monospace']
+        }
+      }
+    }
+  }
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<style>
+  html{ scroll-behavior:smooth; }
+  body{ font-family:'Inter',sans-serif; background:#f5f8fd; color:#152a4d; }
+  h1,h2,h3,h4,.font-display{ font-family:'Sora',sans-serif; }
+  .font-data{ font-family:'JetBrains Mono',monospace; }
+
+  .blob{ position:absolute; border-radius:9999px; filter: blur(70px); opacity:.35; pointer-events:none; }
+  .panel{ position:relative; overflow:hidden; }
+
+  .glass-card, .info-card{
+    background: #ffffff;
+    border: 1px solid #e7edf7;
+    box-shadow: 0 12px 30px -18px rgba(10,30,66,0.18);
+  }
+  .light-card{ background:#ffffff; color:#0a1e42; box-shadow: 0 25px 60px -25px rgba(10,30,66,0.35); }
+
+  .reveal{ opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s ease; }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+
+  .nav-link{ position:relative; color:#48597e; }
+  .nav-link::after{
+    content:''; position:absolute; left:0; bottom:-4px; height:2px; width:0%;
+    background:#0ea89b; transition:width .25s ease;
+  }
+  .nav-link:hover, .nav-link.active{ color:#0a1e42; }
+  .nav-link:hover::after, .nav-link.active::after{ width:100%; }
+
+  #mobileMenu{ max-height:0; overflow:hidden; transition:max-height .35s ease; }
+  #mobileMenu.open{ max-height:1400px; }
+
+  .dropdown-panel{
+    position:absolute; top:calc(100% + 12px); right:0; left:auto;
+    width:250px; background:#0f2954; border:1px solid rgba(255,255,255,0.08); border-radius:14px;
+    padding:8px; box-shadow:0 20px 40px -12px rgba(10,30,66,0.35);
+    opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;
+    transform:translateY(-6px);
+    display:grid; gap:2px; z-index:60;
+  }
+  .dropdown-panel.open{ opacity:1; pointer-events:auto; transform:translateY(0); }
+  .dropdown-item{
+    display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:9px;
+    font-size:0.875rem; color:#dce6fa; transition:background .15s ease, color .15s ease;
+  }
+  .dropdown-item:hover{ background:rgba(255,255,255,0.08); color:#fff; }
+  .dropdown-item.active{ background:rgba(14,168,155,.22); color:#7fe0d6; }
+
+  ::selection{ background:#0ea89b; color:white; }
+  a:focus-visible, button:focus-visible{ outline:2px solid #0ea89b; outline-offset:3px; border-radius:6px; }
+
+  .grid-lines{
+    background-image: linear-gradient(rgba(10,30,66,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(10,30,66,0.045) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .btn-primary{ background:#2f6fed; }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-teal{ background:#0ea89b; }
+  .btn-teal:hover{ filter:brightness(1.08); }
+
+  .row-normal{ color:#0b8377; font-weight:600; }
+  .row-pre{ color:#a9720b; font-weight:600; }
+  .row-diab{ color:#dc2626; font-weight:600; }
+
+  table.data-table{ width:100%; border-collapse:collapse; font-size:0.85rem; }
+  table.data-table th{ text-align:left; color:#0a1e42; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.04em; font-size:0.7rem; padding:0.65rem 0.75rem; border-bottom:1px solid #dbe4f3; }
+  table.data-table td{ padding:0.65rem 0.75rem; border-bottom:1px solid #eef2f9; color:#344a70; vertical-align:top; }
+  table.data-table tr:last-child td{ border-bottom:none; }
+
+  .page-hero{ padding-top: 7rem; padding-bottom: 3rem; }
+
+  .stat-tile{ padding:2rem 1.75rem; }
+
+  .member-card{ transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
+  .member-card:hover{ transform:translateY(-4px); border-color:rgba(14,168,155,.4); box-shadow:0 20px 40px -22px rgba(10,30,66,0.3); }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    .reveal{ transition:none; opacity:1; transform:none; }
+  }
+</style>
+</head>
+<body class="font-body antialiased">
+
+<header id="navbar" class="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between h-16">
+      <a href="index.html" class="flex items-center gap-2 font-display font-bold text-lg tracking-tight text-void-900">
+        <img src="medistudy-logo.svg" alt="" aria-hidden="true" class="w-8 h-8">
+        medistudy
+      </a>
+
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="index.html" class="nav-link py-2">Inicio</a><a href="que-es.html" class="nav-link py-2">¿Qué es?</a><a href="diagnostico.html" class="nav-link py-2 active">Diagnóstico</a><a href="tratamiento.html" class="nav-link py-2">Tratamiento</a>
+        <div id="moreMenuWrap" class="relative">
+          <button id="moreMenuBtn" aria-haspopup="true" aria-expanded="false" class="nav-link py-2 flex items-center gap-1">
+            Más <i data-lucide="chevron-down" id="moreMenuChevron" class="w-3.5 h-3.5 transition-transform"></i>
+          </button>
+          <div id="moreMenuPanel" class="dropdown-panel">
+            <a href="tipos.html" class="dropdown-item"><i data-lucide="pie-chart" class="w-4 h-4 text-teal-300"></i> Tipos</a><a href="anatomia.html" class="dropdown-item"><i data-lucide="stethoscope" class="w-4 h-4 text-teal-300"></i> Anatomía</a><a href="sintomas.html" class="dropdown-item"><i data-lucide="search" class="w-4 h-4 text-teal-300"></i> Síntomas</a><a href="factores-riesgo.html" class="dropdown-item"><i data-lucide="triangle-alert" class="w-4 h-4 text-teal-300"></i> Factores de riesgo</a><a href="complicaciones.html" class="dropdown-item"><i data-lucide="heart-pulse" class="w-4 h-4 text-teal-300"></i> Complicaciones</a><a href="prevencion.html" class="dropdown-item"><i data-lucide="salad" class="w-4 h-4 text-teal-300"></i> Prevención</a><a href="infografia.html" class="dropdown-item"><i data-lucide="bar-chart-3" class="w-4 h-4 text-teal-300"></i> Infografía</a><a href="recursos.html" class="dropdown-item"><i data-lucide="video" class="w-4 h-4 text-teal-300"></i> Recursos</a><a href="contacto.html" class="dropdown-item"><i data-lucide="message-circle" class="w-4 h-4 text-teal-300"></i> Contacto</a><a href="integrantes.html" class="dropdown-item"><i data-lucide="users" class="w-4 h-4 text-teal-300"></i> Integrantes</a><a href="referencias.html" class="dropdown-item"><i data-lucide="book-marked" class="w-4 h-4 text-teal-300"></i> Referencias</a>
+          </div>
+        </div>
+      </nav>
+
+      <a href="contacto.html" class="hidden md:inline-flex items-center gap-2 btn-primary text-white text-sm font-semibold px-4 py-2 rounded-full">
+        Escríbenos <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+      </a>
+
+      <button id="menuBtn" aria-label="Abrir menú" aria-expanded="false" class="md:hidden p-2 -mr-2 rounded-md hover:bg-void-50 text-void-900">
+        <i data-lucide="menu" id="menuIcon" class="w-6 h-6"></i>
+      </button>
+    </div>
+  </div>
+
+  <div id="mobileMenu" class="md:hidden bg-void-800 border-t border-white/10">
+    <nav class="px-4 py-3 flex flex-col text-sm font-medium divide-y divide-white/5">
+      <a href="index.html" class="mobile-link py-3 text-mist">Inicio</a><a href="que-es.html" class="mobile-link py-3 text-mist">¿Qué es?</a><a href="diagnostico.html" class="mobile-link py-3 text-mist" style="color:#0b8377;">Diagnóstico</a><a href="tratamiento.html" class="mobile-link py-3 text-mist">Tratamiento</a><a href="tipos.html" class="mobile-link py-3 text-mist">Tipos</a><a href="anatomia.html" class="mobile-link py-3 text-mist">Anatomía</a><a href="sintomas.html" class="mobile-link py-3 text-mist">Síntomas</a><a href="factores-riesgo.html" class="mobile-link py-3 text-mist">Factores de riesgo</a><a href="complicaciones.html" class="mobile-link py-3 text-mist">Complicaciones</a><a href="prevencion.html" class="mobile-link py-3 text-mist">Prevención</a><a href="infografia.html" class="mobile-link py-3 text-mist">Infografía</a><a href="recursos.html" class="mobile-link py-3 text-mist">Recursos</a><a href="contacto.html" class="mobile-link py-3 text-mist">Contacto</a><a href="integrantes.html" class="mobile-link py-3 text-mist">Integrantes</a><a href="referencias.html" class="mobile-link py-3 text-mist">Referencias</a>
+    </nav>
+  </div>
+</header>
+
+<section class="panel page-hero bg-mist">
+  <div class="blob w-[420px] h-[420px] bg-teal-500 top-10 right-0 opacity-30"></div>
+  <div class="max-w-4xl mx-auto px-6 relative z-10">
+    <div class="reveal text-center max-w-2xl mx-auto mb-10">
+      <span class="text-teal-600 font-data text-xs uppercase tracking-widest">🧪 Manejo clínico</span>
+      <h1 class="font-display text-3xl sm:text-4xl font-bold mt-2">Diagnóstico</h1>
+    </div>
+
+    <div class="reveal glass-card rounded-2xl p-6 sm:p-8 overflow-x-auto mb-14">
+      <h3 class="font-display text-xl font-semibold mb-1 flex items-center gap-2"><i data-lucide="test-tube-2" class="w-5 h-5 text-teal-600"></i> Valores oficiales</h3>
+      <p class="text-sm text-slate-700/60 mb-5">Según los criterios de la ADA</p>
+      <table class="data-table min-w-[560px]">
+        <thead>
+          <tr><th>Prueba diagnóstica</th><th>Normal</th><th>Prediabetes</th><th>Diabetes mellitus</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-medium text-void-900">Glucosa en ayunas</td>
+            <td class="row-normal">Menos de 100 mg/dL</td><td class="row-pre">100 a 125 mg/dL</td><td class="row-diab">126 mg/dL o más</td>
+          </tr>
+          <tr>
+            <td class="font-medium text-void-900">Hemoglobina glicosilada (HbA1c)</td>
+            <td class="row-normal">Menos de 5.7%</td><td class="row-pre">5.7% a 6.4%</td><td class="row-diab">6.5% o más</td>
+          </tr>
+          <tr>
+            <td class="font-medium text-void-900">Tolerancia a la glucosa (2h)</td>
+            <td class="row-normal">Menos de 140 mg/dL</td><td class="row-pre">140 a 199 mg/dL</td><td class="row-diab">200 mg/dL o más</td>
+          </tr>
+          <tr>
+            <td class="font-medium text-void-900">Glucosa al azar (con síntomas)</td>
+            <td>No aplica</td><td>No aplica</td><td class="row-diab">200 mg/dL o más</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="mt-8 pt-8 border-t border-slate-100">
+        <h4 class="font-display font-semibold mb-1 flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4.5 h-4.5 text-teal-600"></i> Comparación visual de umbrales</h4>
+        <p class="text-xs text-slate-700/50 mb-5">Glucosa en ayunas y tolerancia a la glucosa (mg/dL)</p>
+        <div class="relative h-72">
+          <canvas id="chartDiagnostico"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <aside class="reveal glass-card rounded-2xl p-6 mb-10 border border-coral-300">
+      <div class="flex gap-4 items-start"><i data-lucide="circle-alert" class="w-5 h-5 text-coral-500 shrink-0 mt-0.5"></i><div><h3 class="font-display font-semibold">Cómo interpretar los resultados</h3><p class="mt-2 text-sm leading-relaxed text-slate-600">Una prueba alterada no debe interpretarse de forma aislada. En ausencia de síntomas claros, habitualmente se confirma con una segunda prueba o una medición repetida. La HbA1c refleja el promedio aproximado de glucosa de los últimos 2–3 meses, pero puede verse afectada por algunas anemias, transfusiones o enfermedades renales.</p></div></div>
+    </aside>
+
+    <div class="reveal flex justify-center">
+      <a href="tratamiento.html" class="inline-flex items-center gap-2 btn-primary text-white font-semibold px-6 py-3 rounded-full">
+        Siguiente: Tratamiento <i data-lucide="arrow-right" class="w-4 h-4"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="py-12 bg-void-900 border-t border-white/5">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10 text-sm">
+      <div>
+        <a href="index.html" class="flex items-center gap-2 font-display font-bold text-base text-white mb-3">
+          <span class="w-7 h-7 rounded-lg btn-primary flex items-center justify-center">
+            <i data-lucide="activity" class="w-4 h-4 text-white"></i>
+          </span>
+          medistudy
+        </a>
+        <p class="text-violet-300/60 text-xs leading-relaxed">Material educativo sin fines de lucro elaborado por estudiantes de Medicina Humana.</p>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold mb-3">Contenido</h4>
+        <ul class="space-y-2 text-violet-300/60">
+          <li><a href="que-es.html" class="hover:text-teal-300">¿Qué es?</a></li>
+          <li><a href="tipos.html" class="hover:text-teal-300">Tipos</a></li>
+          <li><a href="diagnostico.html" class="hover:text-teal-300">Diagnóstico</a></li>
+          <li><a href="tratamiento.html" class="hover:text-teal-300">Tratamiento</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold mb-3">Más información</h4>
+        <ul class="space-y-2 text-violet-300/60">
+          <li><a href="complicaciones.html" class="hover:text-teal-300">Complicaciones</a></li>
+          <li><a href="prevencion.html" class="hover:text-teal-300">Prevención</a></li>
+          <li><a href="recursos.html" class="hover:text-teal-300">Recursos</a></li>
+          <li><a href="referencias.html" class="hover:text-teal-300">Referencias</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold mb-3">Proyecto</h4>
+        <ul class="space-y-2 text-violet-300/60">
+          <li><a href="integrantes.html" class="hover:text-teal-300">Integrantes</a></li>
+          <li><a href="contacto.html" class="hover:text-teal-300">Contacto</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="text-center text-xs text-violet-300/30 font-data pt-6 border-t border-white/5">medistudy — Material educativo sin fines de lucro.</p>
+  </div>
+</footer>
+
+<script>
+  lucide.createIcons();
+
+  const menuBtn = document.getElementById('menuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  const menuIcon = document.getElementById('menuIcon');
+  menuBtn.addEventListener('click', () => {
+    const isOpen = mobileMenu.classList.toggle('open');
+    menuBtn.setAttribute('aria-expanded', isOpen);
+    menuIcon.setAttribute('data-lucide', isOpen ? 'x' : 'menu');
+    lucide.createIcons();
+  });
+
+  const moreMenuBtn = document.getElementById('moreMenuBtn');
+  const moreMenuPanel = document.getElementById('moreMenuPanel');
+  const moreMenuChevron = document.getElementById('moreMenuChevron');
+  if (moreMenuBtn) {
+    moreMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = moreMenuPanel.classList.toggle('open');
+      moreMenuBtn.setAttribute('aria-expanded', isOpen);
+      moreMenuChevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+    });
+    document.addEventListener('click', (e) => {
+      if (!moreMenuPanel.contains(e.target) && e.target !== moreMenuBtn) {
+        moreMenuPanel.classList.remove('open');
+        moreMenuBtn.setAttribute('aria-expanded', 'false');
+        moreMenuChevron.style.transform = 'rotate(0deg)';
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        moreMenuPanel.classList.remove('open');
+        moreMenuBtn.setAttribute('aria-expanded', 'false');
+        moreMenuChevron.style.transform = 'rotate(0deg)';
+      }
+    });
+  }
+
+  const revealEls = document.querySelectorAll('.reveal');
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  revealEls.forEach(el => revealObserver.observe(el));
+</script>
+
+<script>
+  Chart.defaults.color = '#48597e';
+  Chart.defaults.font.family = "'Inter', sans-serif";
+  const gridColor2 = 'rgba(10,30,66,0.08)';
+  const ctxDiagnostico = document.getElementById('chartDiagnostico');
+  if (ctxDiagnostico) {
+    new Chart(ctxDiagnostico, {
+      type: 'bar',
+      data: {
+        labels: ['Glucosa en ayunas', 'Tolerancia a la glucosa (2h)'],
+        datasets: [
+          { label: 'Normal (máx.)', data: [99, 139], backgroundColor: '#0ea89b' },
+          { label: 'Prediabetes (máx.)', data: [125, 199], backgroundColor: '#e0a83c' },
+          { label: 'Diabetes (umbral)', data: [126, 200], backgroundColor: '#ef4444' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, padding: 14, font: { size: 11 } } } },
+        scales: {
+          y: { grid: { color: gridColor2 }, ticks: { callback: v => v + ' mg/dL' }, beginAtZero: true },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
